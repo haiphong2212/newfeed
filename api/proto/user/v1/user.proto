@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "github.com/newfeed/community-news/gen/user/v1;userv1";
+
+service UserService {
+  rpc UpsertProfile(UpsertProfileRequest) returns (UpsertProfileResponse);
+  rpc FollowUser(FollowUserRequest) returns (FollowUserResponse);
+  rpc FollowTopic(FollowTopicRequest) returns (FollowTopicResponse);
+}
+
+message UpsertProfileRequest {
+  string user_id = 1;
+  string display_name = 2;
+  string bio = 3;
+}
+
+message UpsertProfileResponse {}
+
+message FollowUserRequest {
+  string follower_id = 1;
+  string followed_id = 2;
+}
+
+message FollowUserResponse {}
+
+message FollowTopicRequest {
+  string user_id = 1;
+  string topic = 2;
+}
+
+message FollowTopicResponse {}

@@ -1,0 +1,40 @@
+MODULE: internal/domain/user.go
+PATH: d:\newfeed\services\auth-service\internal\domain\user.go
+
+package domain
+
+import "time"
+
+// User represents a user in the system
+type User struct {
+	ID        string    `db:"id"`
+	Email     string    `db:"email"`
+	Password  string    `db:"password"`
+	FirstName string    `db:"first_name"`
+	LastName  string    `db:"last_name"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
+}
+
+// NewUser creates a new user instance
+func NewUser(email, password, firstName, lastName string) *User {
+	return &User{
+		Email:     email,
+		Password:  password,
+		FirstName: firstName,
+		LastName:  lastName,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+	}
+}
+
+// IsValid checks if the user data is valid
+func (u *User) IsValid() error {
+	if u.Email == "" {
+		return ErrInvalidEmail
+	}
+	if u.Password == "" {
+		return ErrInvalidPassword
+	}
+	return nil
+}
