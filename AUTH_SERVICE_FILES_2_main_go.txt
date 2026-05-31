@@ -1,0 +1,77 @@
+MODULE: main.go
+PATH: d:\newfeed\services\auth-service\main.go
+
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/joho/godotenv"
+	"github.com/newfeed/services/auth-service/internal/config"
+	"github.com/newfeed/services/auth-service/internal/delivery/grpc"
+	"github.com/newfeed/services/auth-service/internal/delivery/http"
+	"github.com/newfeed/services/auth-service/internal/infrastructure"
+	"github.com/newfeed/services/auth-service/internal/repository"
+	"github.com/newfeed/services/auth-service/internal/usecase"
+)
+
+func main() {
+	// Load environment variables
+	_ = godotenv.Load()
+
+	// Load configuration
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	// Initialize infrastructure
+	db, err := infrastructure.NewDatabase(cfg)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+	defer db.Close()
+
+	// Initialize repositories
+	userRepo := repository.NewPostgresUserRepository(db)
+	tokenRepo := repository.NewPostgresTokenRepository(db)
+
+	// Initialize password and JWT services
+	passwordService := infrastructure.NewPasswordService()
+	jwtService := infrastructure.NewJWTService(cfg.JWTSecret, cfg.JWTExpiry)
+
+	// Initialize use cases
+	registerUC := usecase.NewRegisterUseCase(userRepo, passwordService)
+	loginUC := usecase.NewLoginUseCase(userRepo, passwordService, jwtService, tokenRepo)
+	refreshTokenUC := usecase.NewRefreshTokenUseCase(tokenRepo, jwtService)
+	validateTokenUC := usecase.NewValidateTokenUseCase(jwtService)
+
+	// Start servers
+	go func() {
+		log.Printf("Starting HTTP server on port %d", cfg.HTTPPort)
+		httpServer := http.NewHTTPServer(
+			cfg.HTTPPort,
+			registerUC,
+			loginUC,
+			refreshTokenUC,
+			validateTokenUC,
+		)
+		if err := httpServer.Start(); err != nil {
+			log.Fatalf("HTTP server failed: %v", err)
+		}
+	}()
+
+	log.Printf("Starting gRPC server on port %d", cfg.GRPCPort)
+	grpcServer := grpc.NewGRPCServer(
+		cfg.GRPCPort,
+		registerUC,
+		loginUC,
+		refreshTokenUC,
+		validateTokenUC,
+	)
+	if err := grpcServer.Start(); err != nil {
+		log.Fatalf("gRPC server failed: %v", err)
+	}
+}

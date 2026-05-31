@@ -1,0 +1,94 @@
+MODULE: internal/infrastructure/jwt.go
+PATH: d:\newfeed\services\auth-service\internal\infrastructure\jwt.go
+
+package infrastructure
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+// JWTService handles JWT token creation and validation
+type JWTService struct {
+	secret string
+	expiry time.Duration
+}
+
+// Claims represents the JWT claims
+type Claims struct {
+	UserID    string `json:"user_id"`
+	Email     string `json:"email"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	jwt.RegisteredClaims
+}
+
+// NewJWTService creates a new JWT service
+func NewJWTService(secret string, expiry time.Duration) *JWTService {
+	return &JWTService{
+		secret: secret,
+		expiry: expiry,
+	}
+}
+
+// GenerateToken generates a new JWT token
+func (js *JWTService) GenerateToken(userID, email, firstName, lastName string) (string, error) {
+	claims := &Claims{
+		UserID:    userID,
+		Email:     email,
+		FirstName: firstName,
+		LastName:  lastName,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(js.expiry)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
+		},
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte(js.secret))
+	if err != nil {
+		return "", err
+	}
+
+	return tokenString, nil
+}
+
+// ValidateToken validates a JWT token and returns the claims
+func (js *JWTService) ValidateToken(tokenString string) (*Claims, error) {
+	claims := &Claims{}
+
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(js.secret), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, fmt.Errorf("invalid token")
+	}
+
+	return claims, nil
+}
+
+// RefreshToken generates a new token from the existing claims
+func (js *JWTService) RefreshToken(tokenString string) (string, error) {
+	claims, err := js.ValidateToken(tokenString)
+	if err != nil {
+		return "", err
+	}
+
+	return js.GenerateToken(
+		claims.UserID,
+		claims.Email,
+		claims.FirstName,
+		claims.LastName,
+	)
+}

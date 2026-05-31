@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package news.v1;
+
+option go_package = "github.com/newfeed/community-news/gen/news/v1;newsv1";
+
+service NewsService {
+  rpc PublishArticle(PublishArticleRequest) returns (PublishArticleResponse);
+}
+
+message PublishArticleRequest {
+  string id = 1;
+  string author_id = 2;
+  string title = 3;
+  string content = 4;
+  string category = 5;
+  repeated string tags = 6;
+}
+
+message PublishArticleResponse {
+  string status = 1;
+  string discussion_room_name = 2;
+}

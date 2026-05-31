@@ -1,0 +1,12 @@
+FROM golang:1.25-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+COPY cmd ./cmd
+COPY services ./services
+RUN go build -o /out/migrate ./cmd/migrate
+
+FROM alpine:3.20
+WORKDIR /app
+COPY --from=build /out/migrate /usr/local/bin/newfeed-migrate
+COPY database ./database
+ENTRYPOINT ["newfeed-migrate"]
