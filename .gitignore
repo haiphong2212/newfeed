@@ -2,8 +2,8 @@
 .env.*
 !.env.example
 
-data/
-storage/
+/data/
+/storage/
 
 *.log
 *.test
