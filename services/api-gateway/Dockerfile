@@ -1,6 +1,7 @@
 FROM golang:1.25-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
+COPY gen ./gen
 COPY services ./services
 RUN go build -o /out/api-gateway ./services/api-gateway/cmd/api-gateway
 

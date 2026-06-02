@@ -11,7 +11,6 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 10s
@@ -366,7 +365,16 @@ services:
     environment:
       - ENV=${ENV:-development}
       - LOG_LEVEL=${LOG_LEVEL:-info}
+      - OBJECT_STORAGE_DRIVER=${OBJECT_STORAGE_DRIVER:-local}
       - OBJECT_STORAGE_ROOT=/var/lib/newfeed/objects
+      - MEDIA_BUCKET=${MEDIA_BUCKET:-community-news}
+      - MEDIA_PUBLIC_URL=${MEDIA_PUBLIC_URL:-http://localhost:8008}
+      - R2_ENDPOINT=${R2_ENDPOINT:-}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID:-}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY:-}
+      - R2_BUCKET=${R2_BUCKET:-newfeed-media}
+      - R2_PUBLIC_URL=${R2_PUBLIC_URL:-}
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN:-}
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USER=${DB_USER:-postgres}
