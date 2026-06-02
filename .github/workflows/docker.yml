@@ -37,8 +37,8 @@ jobs:
           file: services/api-gateway/Dockerfile
           push: true
           tags: |
-            kelvinphan/newfeed-api:latest
-            kelvinphan/newfeed-api:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/newfeed:api-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/newfeed:api-${{ github.sha }}
 
       - name: Build and Push Reverse Proxy Gateway
         uses: docker/build-push-action@v6
@@ -47,5 +47,5 @@ jobs:
           file: deployments/docker/Dockerfile.gateway
           push: true
           tags: |
-            kelvinphan/newfeed-gateway:latest
-            kelvinphan/newfeed-gateway:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/newfeed:gateway-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/newfeed:gateway-${{ github.sha }}
