@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+
+data/
+storage/
+
+*.log
+*.test
+bin/
+dist/
+
+.DS_Store
+Thumbs.db
