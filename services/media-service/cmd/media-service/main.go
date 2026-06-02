@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"log"
+	"mime/multipart"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/newfeed/community-news/services/media-service/internal/media/repository"
@@ -35,29 +37,39 @@ func main() {
 	app.Post("/v1/media/upload", func(c *fiber.Ctx) error {
 		ownerID := c.FormValue("owner_id")
 		bucket := c.FormValue("bucket", env.String("MEDIA_BUCKET", env.String("R2_BUCKET", "community-news")))
-		file, err := c.FormFile("file")
-		if err != nil {
-			return fiber.NewError(fiber.StatusBadRequest, "file is required")
-		}
-		source, err := file.Open()
+		files, err := uploadedFiles(c)
 		if err != nil {
 			return err
 		}
-		defer source.Close()
-		key := strings.Trim(filepath.ToSlash(filepath.Clean(file.Filename)), "/.\\")
-		stored, err := store.Put(c.UserContext(), bucket, key, file.Header.Get("Content-Type"), source)
-		if err != nil {
+		if err := validateUploadBatch(files); err != nil {
 			return err
 		}
-		size := stored.Size
-		if size == 0 {
-			size = file.Size
+		results := make([]fiber.Map, 0, len(files))
+		for _, file := range files {
+			source, err := file.Open()
+			if err != nil {
+				return err
+			}
+			key := objectKey(file.Filename)
+			stored, putErr := store.Put(c.UserContext(), bucket, key, file.Header.Get("Content-Type"), source)
+			closeErr := source.Close()
+			if putErr != nil {
+				return putErr
+			}
+			if closeErr != nil {
+				return closeErr
+			}
+			size := stored.Size
+			if size == 0 {
+				size = file.Size
+			}
+			object, err := media.SaveObject(c.UserContext(), ownerID, stored.Bucket, stored.Key, file.Header.Get("Content-Type"), size)
+			if err != nil {
+				return err
+			}
+			results = append(results, fiber.Map{"object": object, "url": stored.URL})
 		}
-		object, err := media.SaveObject(c.UserContext(), ownerID, stored.Bucket, stored.Key, file.Header.Get("Content-Type"), size)
-		if err != nil {
-			return err
-		}
-		return c.Status(fiber.StatusCreated).JSON(fiber.Map{"object": object, "url": stored.URL})
+		return c.Status(fiber.StatusCreated).JSON(fiber.Map{"objects": results})
 	})
 	app.Get("/objects/:bucket/:key", func(c *fiber.Ctx) error {
 		return c.SendFile(filepath.Join(cfg.ObjectRoot, c.Params("bucket"), filepath.Clean(c.Params("key"))))
@@ -65,6 +77,50 @@ func main() {
 	if err := platform.ListenFiber(app, cfg.HTTPAddr, logger); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func uploadedFiles(c *fiber.Ctx) ([]*multipart.FileHeader, error) {
+	form, err := c.MultipartForm()
+	if err != nil {
+		return nil, fiber.NewError(fiber.StatusBadRequest, "multipart form is required")
+	}
+	files := append([]*multipart.FileHeader{}, form.File["files"]...)
+	files = append(files, form.File["file"]...)
+	if len(files) == 0 {
+		return nil, fiber.NewError(fiber.StatusBadRequest, "file is required")
+	}
+	return files, nil
+}
+
+func validateUploadBatch(files []*multipart.FileHeader) error {
+	const maxImages = 3
+	const maxVideoBytes = 20 * 1024 * 1024
+	imageCount := 0
+	for _, file := range files {
+		contentType := file.Header.Get("Content-Type")
+		switch {
+		case strings.HasPrefix(contentType, "image/"):
+			imageCount++
+			if imageCount > maxImages {
+				return fiber.NewError(fiber.StatusBadRequest, "maximum 3 images are allowed")
+			}
+		case strings.HasPrefix(contentType, "video/"):
+			if file.Size > maxVideoBytes {
+				return fiber.NewError(fiber.StatusBadRequest, "video files must be 20MB or smaller")
+			}
+		default:
+			return fiber.NewError(fiber.StatusBadRequest, "only image and video uploads are allowed")
+		}
+	}
+	return nil
+}
+
+func objectKey(filename string) string {
+	name := strings.Trim(filepath.ToSlash(filepath.Clean(filename)), "/.\\")
+	if name == "" {
+		name = "upload"
+	}
+	return time.Now().UTC().Format("20060102/150405.000000000") + "-" + filepath.Base(name)
 }
 
 func buildStorage(localRoot string) mediastorage.ObjectStorage {

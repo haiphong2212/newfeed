@@ -14,7 +14,7 @@ func TestRegisterLoginRefreshValidate(t *testing.T) {
 	users := repository.NewMemoryUserRepository()
 	refreshTokens := repository.NewMemoryRefreshTokenRepository()
 	passwords := security.NewPasswordHasher()
-	tokens := security.NewJWTSigner("test-secret", time.Minute)
+	tokens := security.NewJWTSigner("test-secret-at-least-32-bytes-value", time.Minute)
 	auth := NewService(users, refreshTokens, passwords, tokens, time.Hour)
 
 	user, err := auth.Register(context.Background(), RegisterInput{
@@ -60,7 +60,7 @@ func TestLoginRejectsBadPassword(t *testing.T) {
 		repository.NewMemoryUserRepository(),
 		repository.NewMemoryRefreshTokenRepository(),
 		security.NewPasswordHasher(),
-		security.NewJWTSigner("test-secret", time.Minute),
+		security.NewJWTSigner("test-secret-at-least-32-bytes-value", time.Minute),
 		time.Hour,
 	)
 	_, err := auth.Register(context.Background(), RegisterInput{Email: "a@example.com", Password: "password123"})

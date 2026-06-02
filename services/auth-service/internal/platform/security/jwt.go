@@ -14,23 +14,32 @@ import (
 )
 
 type JWTSigner struct {
-	secret []byte
-	ttl    time.Duration
+	secret   []byte
+	ttl      time.Duration
+	issuer   string
+	audience string
 }
 
 func NewJWTSigner(secret string, ttl time.Duration) *JWTSigner {
-	return &JWTSigner{secret: []byte(secret), ttl: ttl}
+	return &JWTSigner{secret: []byte(secret), ttl: ttl, issuer: "newfeed-auth-service", audience: "newfeed-api"}
 }
 
 func (s *JWTSigner) SignAccessToken(user domain.User) (string, time.Time, error) {
+	if len(s.secret) < 32 {
+		return "", time.Time{}, errors.New("jwt secret must be at least 32 bytes")
+	}
+	now := time.Now().UTC()
 	expiresAt := time.Now().UTC().Add(s.ttl)
 	header := map[string]string{"alg": "HS256", "typ": "JWT"}
 	claims := map[string]any{
 		"sub":   user.ID,
 		"email": user.Email,
 		"role":  string(user.Role),
+		"iss":   s.issuer,
+		"aud":   s.audience,
 		"exp":   expiresAt.Unix(),
-		"iat":   time.Now().UTC().Unix(),
+		"iat":   now.Unix(),
+		"nbf":   now.Unix(),
 	}
 	headerPart, err := encodeJSON(header)
 	if err != nil {
@@ -49,27 +58,58 @@ func (s *JWTSigner) ParseAccessToken(raw string) (*domain.Claims, error) {
 	if len(parts) != 3 {
 		return nil, errors.New("invalid token")
 	}
-	payload := parts[0] + "." + parts[1]
-	if !hmac.Equal([]byte(parts[2]), []byte(s.sign(payload))) {
-		return nil, errors.New("invalid token signature")
-	}
-	decoded, err := base64.RawURLEncoding.DecodeString(parts[1])
+	header, err := decodeMap(parts[0])
 	if err != nil {
 		return nil, err
 	}
-	var claims map[string]any
-	if err := json.Unmarshal(decoded, &claims); err != nil {
+	if stringClaim(header["alg"]) != "HS256" || stringClaim(header["typ"]) != "JWT" {
+		return nil, errors.New("invalid token header")
+	}
+	payload := parts[0] + "." + parts[1]
+	expected, err := base64.RawURLEncoding.DecodeString(s.sign(payload))
+	if err != nil {
 		return nil, err
 	}
+	actual, err := base64.RawURLEncoding.DecodeString(parts[2])
+	if err != nil {
+		return nil, err
+	}
+	if !hmac.Equal(actual, expected) {
+		return nil, errors.New("invalid token signature")
+	}
+	claims, err := decodeMap(parts[1])
+	if err != nil {
+		return nil, err
+	}
+	now := time.Now().UTC().Unix()
 	exp, err := numericClaim(claims["exp"])
-	if err != nil || time.Now().UTC().Unix() >= exp {
+	if err != nil || now >= exp {
 		return nil, errors.New("token expired")
+	}
+	nbf, err := numericClaim(claims["nbf"])
+	if err != nil || now < nbf {
+		return nil, errors.New("token not active")
+	}
+	if stringClaim(claims["iss"]) != s.issuer || stringClaim(claims["aud"]) != s.audience {
+		return nil, errors.New("invalid token issuer or audience")
 	}
 	return &domain.Claims{
 		UserID: stringClaim(claims["sub"]),
 		Email:  stringClaim(claims["email"]),
 		Role:   stringClaim(claims["role"]),
 	}, nil
+}
+
+func decodeMap(part string) (map[string]any, error) {
+	decoded, err := base64.RawURLEncoding.DecodeString(part)
+	if err != nil {
+		return nil, err
+	}
+	var out map[string]any
+	if err := json.Unmarshal(decoded, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (s *JWTSigner) sign(payload string) string {

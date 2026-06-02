@@ -30,8 +30,9 @@ func main() {
 	users := repository.NewPostgresUserRepository(db)
 	refreshTokens := repository.NewPostgresRefreshTokenRepository(db)
 	passwords := security.NewPasswordHasher()
-	tokens := security.NewJWTSigner(env.String("JWT_SECRET", "dev-secret-change-me"), env.Duration("JWT_EXPIRY", 15*time.Minute))
-	auth := usecase.NewService(users, refreshTokens, passwords, tokens, env.Duration("REFRESH_TOKEN_EXPIRY", 7*24*time.Hour))
+	refreshTTL := env.Duration("REFRESH_TOKEN_EXPIRY", 7*24*time.Hour)
+	tokens := security.NewJWTSigner(env.String("JWT_SECRET", "dev-secret-change-me-at-least-32-bytes"), env.Duration("JWT_EXPIRY", 15*time.Minute))
+	auth := usecase.NewService(users, refreshTokens, passwords, tokens, refreshTTL)
 	grpcServer, err := platform.StartGRPC(cfg.GRPCAddr, cfg.ServiceName, logg, func(server *grpc.Server) {
 		authv1.RegisterAuthServiceServer(server, authgrpc.NewServer(auth))
 	})
@@ -40,7 +41,13 @@ func main() {
 	}
 	defer grpcServer.GracefulStop()
 
-	handler := authhttp.NewHandler(auth)
+	handler := authhttp.NewHandler(auth, authhttp.CookieOptions{
+		Enabled:             env.String("AUTH_COOKIE_ENABLED", "true") == "true",
+		Secure:              env.String("AUTH_COOKIE_SECURE", "false") == "true",
+		Domain:              env.String("AUTH_COOKIE_DOMAIN", ""),
+		SameSite:            env.String("AUTH_COOKIE_SAME_SITE", "Lax"),
+		RefreshCookieMaxAge: refreshTTL,
+	})
 	app := platform.NewFiber(cfg.ServiceName)
 	handler.RegisterRoutes(app)
 	if err := platform.ListenFiber(app, cfg.HTTPAddr, logg); err != nil {
