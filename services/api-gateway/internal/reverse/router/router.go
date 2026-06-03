@@ -22,6 +22,8 @@ func New(cfg config.Config, log *logger.Logger) http.Handler {
 		response.JSON(w, http.StatusOK, map[string]string{"status": "ok"})
 	})
 	mux.Handle("/csrf-token", middleware.TokenHandler(cfg.CSRFCookieName, cfg.CookieSecure))
+	mux.Handle("/api/", proxy.NewPrefixProxy(cfg.APITarget, "/api", log))
+	mux.Handle("/ws/", proxy.NewPrefixProxy(cfg.ChatTarget, "", log))
 	mux.Handle("/", gateway)
 	return middleware.Chain(
 		mux,

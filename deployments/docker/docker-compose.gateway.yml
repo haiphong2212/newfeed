@@ -15,6 +15,7 @@ services:
       - APP_TARGET=http://frontend-user:3000
       - ADMIN_TARGET=http://frontend-admin:3001
       - API_TARGET=http://api:8080
+      - CHAT_TARGET=http://chat-service:8006
       - CORS_ALLOWED_ORIGINS=https://web.newfeed.site,https://admin.newfeed.site
       - AUTH_COOKIE_NAMES=newfeed_access_token,newfeed_refresh_token
       - CSRF_COOKIE_NAME=csrf_token
@@ -25,6 +26,7 @@ services:
       - frontend-user
       - frontend-admin
       - api
+      - chat-service
     networks:
       - newfeed-public
       - newfeed-private
@@ -59,6 +61,25 @@ services:
       - USER_SERVICE_URL=user-service:50052
       - NEWS_SERVICE_URL=news-service:50053
       - SEARCH_SERVICE_URL=search-service:50056
+    networks:
+      - newfeed-private
+
+  chat-service:
+    build:
+      context: ../..
+      dockerfile: services/chat-service/Dockerfile
+    container_name: newfeed-chat-service
+    expose:
+      - "8006"
+    environment:
+      - HTTP_ADDR=:8006
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-postgres}
+      - DB_PASSWORD=${DB_PASSWORD:-postgres}
+      - DB_NAME=${DB_NAME:-newfeed}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     networks:
       - newfeed-private
 
