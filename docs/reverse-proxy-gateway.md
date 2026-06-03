@@ -7,6 +7,8 @@ The gateway is a standard-library Go reverse proxy that can replace Nginx in fro
 - `web.newfeed.site` -> `APP_TARGET`
 - `admin.newfeed.site` -> `ADMIN_TARGET`
 - `api.newfeed.site` -> `API_TARGET`
+- `web.newfeed.site/api/*` -> `API_TARGET` with `/api` stripped
+- `web.newfeed.site/ws/*` -> `CHAT_TARGET`
 
 Defaults:
 
@@ -14,6 +16,7 @@ Defaults:
 APP_TARGET=http://frontend-user:3000
 ADMIN_TARGET=http://frontend-admin:3001
 API_TARGET=http://api:8080
+CHAT_TARGET=http://chat-service:8006
 ```
 
 ## Run Locally

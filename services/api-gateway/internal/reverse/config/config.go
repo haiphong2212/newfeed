@@ -16,6 +16,7 @@ type Config struct {
 	AppTarget       *url.URL
 	AdminTarget     *url.URL
 	APITarget       *url.URL
+	ChatTarget      *url.URL
 	AllowedOrigins  []string
 	RateLimitRPS    int
 	ShutdownTimeout time.Duration
@@ -37,6 +38,10 @@ func Load() (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	chatTarget, err := url.Parse(env("CHAT_TARGET", "http://chat-service:8006"))
+	if err != nil {
+		return Config{}, err
+	}
 	return Config{
 		Port:            env("PORT", "80"),
 		AppHost:         env("APP_HOST", "app.newfeed.site"),
@@ -45,6 +50,7 @@ func Load() (Config, error) {
 		AppTarget:       appTarget,
 		AdminTarget:     adminTarget,
 		APITarget:       apiTarget,
+		ChatTarget:      chatTarget,
 		AllowedOrigins:  csv("CORS_ALLOWED_ORIGINS", "https://app.newfeed.site,https://admin.newfeed.site"),
 		RateLimitRPS:    intEnv("RATE_LIMIT_RPS", 20),
 		ShutdownTimeout: durationEnv("SHUTDOWN_TIMEOUT", 30*time.Second),

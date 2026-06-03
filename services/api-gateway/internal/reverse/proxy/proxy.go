@@ -60,6 +60,19 @@ func newProxy(target *url.URL, log *logger.Logger) *httputil.ReverseProxy {
 	return proxy
 }
 
+func NewPrefixProxy(target *url.URL, prefix string, log *logger.Logger) http.Handler {
+	proxy := newProxy(target, log)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if prefix != "" && strings.HasPrefix(r.URL.Path, prefix) {
+			r.URL.Path = strings.TrimPrefix(r.URL.Path, prefix)
+			if r.URL.Path == "" {
+				r.URL.Path = "/"
+			}
+		}
+		proxy.ServeHTTP(w, r)
+	})
+}
+
 func normalizeHost(host string) string {
 	host = strings.ToLower(strings.TrimSpace(host))
 	if h, _, err := net.SplitHostPort(host); err == nil {
