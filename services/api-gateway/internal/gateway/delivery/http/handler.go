@@ -34,6 +34,15 @@ func NewHandler(health gatewaygrpc.HealthClient, clients *gatewaygrpc.Clients, t
 }
 
 func (h Handler) RegisterRoutes(app *fiber.App) {
+	app.Use(func(c *fiber.Ctx) error {
+		path := c.Path()
+		if path == "/api" {
+			c.Path("/")
+		} else if strings.HasPrefix(path, "/api/") {
+			c.Path(strings.TrimPrefix(path, "/api"))
+		}
+		return c.Next()
+	})
 	app.Get("/v1/status", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "gateway-ready"})
 	})
