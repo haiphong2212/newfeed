@@ -87,7 +87,11 @@ services:
       - USER_SERVICE_URL=user-service:50052
       - NEWS_SERVICE_URL=news-service:50053
       - CHAT_SERVICE_URL=chat-service:50054
-      - MEDIA_SERVICE_URL=media-service:50055
+      - MEDIA_SERVICE_URL=media-service:50057
+      - USER_HTTP_URL=http://user-service:8002
+      - NEWS_HTTP_URL=http://news-service:8003
+      - SEARCH_HTTP_URL=http://search-service:8004
+      - MEDIA_HTTP_URL=http://media-service:8008
     depends_on:
       auth-service:
         condition: service_healthy

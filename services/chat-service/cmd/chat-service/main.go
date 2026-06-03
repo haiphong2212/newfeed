@@ -4,8 +4,10 @@ import (
 	"context"
 	"log"
 
+	chathttp "github.com/newfeed/community-news/services/chat-service/internal/room/delivery/http"
 	chatws "github.com/newfeed/community-news/services/chat-service/internal/room/delivery/websocket"
 	"github.com/newfeed/community-news/services/chat-service/internal/room/repository"
+	"github.com/newfeed/community-news/services/chat-service/internal/room/usecase"
 	"github.com/newfeed/community-news/services/shared/platform"
 )
 
@@ -29,7 +31,10 @@ func main() {
 	}
 	defer redisClient.Close()
 	app := platform.NewFiber(cfg.ServiceName)
-	hub := chatws.NewHub(repository.NewPostgresRepository(db), redisClient)
+	repo := repository.NewPostgresRepository(db)
+	rooms := usecase.NewService(repo)
+	chathttp.NewHandler(rooms).RegisterRoutes(app)
+	hub := chatws.NewHub(repo, redisClient)
 	hub.RegisterRoutes(app)
 	if err := platform.ListenFiber(app, cfg.HTTPAddr, logger); err != nil {
 		log.Fatal(err)

@@ -32,7 +32,13 @@ func main() {
 		log.Fatal(err)
 	}
 	defer clients.Close()
-	handler := gatewayhttp.NewHandler(gatewaygrpc.NewHealthClient(targets), clients)
+	httpTargets := gatewayhttp.HTTPTargets{
+		User:   env.String("USER_HTTP_URL", "http://user-service:8002"),
+		News:   env.String("NEWS_HTTP_URL", "http://news-service:8003"),
+		Search: env.String("SEARCH_HTTP_URL", "http://search-service:8004"),
+		Media:  env.String("MEDIA_HTTP_URL", "http://media-service:8008"),
+	}
+	handler := gatewayhttp.NewHandler(gatewaygrpc.NewHealthClient(targets), clients, httpTargets)
 	app := platform.NewFiber(cfg.ServiceName)
 	handler.RegisterRoutes(app)
 	if err := platform.ListenFiber(app, cfg.HTTPAddr, logger); err != nil {

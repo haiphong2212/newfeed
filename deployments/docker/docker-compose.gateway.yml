@@ -9,13 +9,13 @@ services:
       - "443:443"
     environment:
       - PORT=80
-      - APP_HOST=app.newfeed.site
+      - APP_HOST=web.newfeed.site
       - ADMIN_HOST=admin.newfeed.site
       - API_HOST=api.newfeed.site
       - APP_TARGET=http://frontend-user:3000
       - ADMIN_TARGET=http://frontend-admin:3001
       - API_TARGET=http://api:8080
-      - CORS_ALLOWED_ORIGINS=https://app.newfeed.site,https://admin.newfeed.site
+      - CORS_ALLOWED_ORIGINS=https://web.newfeed.site,https://admin.newfeed.site
       - AUTH_COOKIE_NAMES=newfeed_access_token,newfeed_refresh_token
       - CSRF_COOKIE_NAME=csrf_token
       - COOKIE_SECURE=true

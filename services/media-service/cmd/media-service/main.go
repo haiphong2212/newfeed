@@ -71,8 +71,13 @@ func main() {
 		}
 		return c.Status(fiber.StatusCreated).JSON(fiber.Map{"objects": results})
 	})
-	app.Get("/objects/:bucket/:key", func(c *fiber.Ctx) error {
-		return c.SendFile(filepath.Join(cfg.ObjectRoot, c.Params("bucket"), filepath.Clean(c.Params("key"))))
+	app.Get("/objects/:bucket/*", func(c *fiber.Ctx) error {
+		bucket := safePathPart(c.Params("bucket"))
+		key := safePathPart(c.Params("*"))
+		if bucket == "" || key == "" {
+			return fiber.NewError(fiber.StatusBadRequest, "invalid object path")
+		}
+		return c.SendFile(filepath.Join(cfg.ObjectRoot, bucket, key))
 	})
 	if err := platform.ListenFiber(app, cfg.HTTPAddr, logger); err != nil {
 		log.Fatal(err)
@@ -121,6 +126,14 @@ func objectKey(filename string) string {
 		name = "upload"
 	}
 	return time.Now().UTC().Format("20060102/150405.000000000") + "-" + filepath.Base(name)
+}
+
+func safePathPart(value string) string {
+	cleaned := strings.Trim(filepath.ToSlash(filepath.Clean(value)), "/")
+	if cleaned == "." || cleaned == ".." || strings.HasPrefix(cleaned, "../") {
+		return ""
+	}
+	return cleaned
 }
 
 func buildStorage(localRoot string) mediastorage.ObjectStorage {

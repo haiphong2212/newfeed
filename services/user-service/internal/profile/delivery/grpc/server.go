@@ -19,9 +19,16 @@ func NewServer(profiles usecase.Service) *Server {
 
 func (s *Server) UpsertProfile(ctx context.Context, req *userv1.UpsertProfileRequest) (*userv1.UpsertProfileResponse, error) {
 	err := s.profiles.UpsertProfile(ctx, domain.Profile{
-		UserID:      req.GetUserId(),
-		DisplayName: req.GetDisplayName(),
-		Bio:         req.GetBio(),
+		UserID:         req.GetUserId(),
+		DisplayName:    req.GetDisplayName(),
+		Bio:            req.GetBio(),
+		Headline:       req.GetHeadline(),
+		Education:      req.GetEducation(),
+		Occupation:     req.GetOccupation(),
+		Location:       req.GetLocation(),
+		WebsiteURL:     req.GetWebsiteUrl(),
+		AvatarObjectID: req.GetAvatarObjectId(),
+		CoverObjectID:  req.GetCoverObjectId(),
 	})
 	return &userv1.UpsertProfileResponse{}, err
 }

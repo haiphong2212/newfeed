@@ -11,6 +11,11 @@ import (
 type Repository interface {
 	Save(ctx context.Context, article domain.Article) error
 	FindByID(ctx context.Context, id string) (*domain.Article, error)
+	ListByAuthor(ctx context.Context, authorID string, limit int, cursor time.Time) ([]domain.Article, error)
+	CreateComment(ctx context.Context, comment domain.Comment) (domain.Comment, error)
+	ListComments(ctx context.Context, articleID string, limit int, cursor time.Time) ([]domain.Comment, error)
+	ShareArticle(ctx context.Context, share domain.Share) (domain.Share, error)
+	ListSharesByUser(ctx context.Context, userID string, limit int, cursor time.Time) ([]domain.Share, error)
 }
 
 type EventPublisher interface {
@@ -50,6 +55,37 @@ func (s *Service) Publish(ctx context.Context, article domain.Article) error {
 		"tags":                 article.Tags,
 		"discussion_room_name": article.DiscussionRoomName(),
 	})
+}
+
+func (s *Service) ListPublishedByAuthor(ctx context.Context, authorID string, limit int, cursor time.Time) ([]domain.Article, error) {
+	return s.repo.ListByAuthor(ctx, authorID, limit, cursor)
+}
+
+func (s *Service) CreateComment(ctx context.Context, comment domain.Comment) (domain.Comment, error) {
+	comment.Body = strings.TrimSpace(comment.Body)
+	if comment.ArticleID == "" || comment.UserID == "" || comment.Body == "" {
+		return domain.Comment{}, domain.ErrInvalidArticle
+	}
+	return s.repo.CreateComment(ctx, comment)
+}
+
+func (s *Service) ListComments(ctx context.Context, articleID string, limit int, cursor time.Time) ([]domain.Comment, error) {
+	return s.repo.ListComments(ctx, articleID, limit, cursor)
+}
+
+func (s *Service) ShareArticle(ctx context.Context, share domain.Share) (domain.Share, error) {
+	share.Caption = strings.TrimSpace(share.Caption)
+	if share.ArticleID == "" || share.UserID == "" {
+		return domain.Share{}, domain.ErrInvalidArticle
+	}
+	if share.Visibility == "" {
+		share.Visibility = "public"
+	}
+	return s.repo.ShareArticle(ctx, share)
+}
+
+func (s *Service) ListSharesByUser(ctx context.Context, userID string, limit int, cursor time.Time) ([]domain.Share, error) {
+	return s.repo.ListSharesByUser(ctx, userID, limit, cursor)
 }
 
 func slugify(value string) string {

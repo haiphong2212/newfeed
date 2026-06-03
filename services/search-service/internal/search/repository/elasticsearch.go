@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net/http"
 
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/newfeed/community-news/services/search-service/internal/search/domain"
@@ -18,6 +19,53 @@ type ElasticsearchRepository struct {
 
 func NewElasticsearchRepository(es *elasticsearch.Client) *ElasticsearchRepository {
 	return &ElasticsearchRepository{es: es}
+}
+
+func (r *ElasticsearchRepository) EnsureArticleIndex(ctx context.Context) error {
+	res, err := r.es.Indices.Exists([]string{ArticleIndex}, r.es.Indices.Exists.WithContext(ctx))
+	if err != nil {
+		return err
+	}
+	res.Body.Close()
+	if res.StatusCode == http.StatusOK {
+		return nil
+	}
+	if res.StatusCode != http.StatusNotFound {
+		return &Error{Message: res.String()}
+	}
+	mapping := map[string]any{
+		"settings": map[string]any{
+			"analysis": map[string]any{
+				"analyzer": map[string]any{
+					"article_text": map[string]any{
+						"type":      "custom",
+						"tokenizer": "standard",
+						"filter":    []string{"lowercase", "asciifolding"},
+					},
+				},
+			},
+		},
+		"mappings": map[string]any{
+			"properties": map[string]any{
+				"article_id": map[string]any{"type": "keyword"},
+				"title":      map[string]any{"type": "text", "analyzer": "article_text", "fields": map[string]any{"keyword": map[string]any{"type": "keyword"}}},
+				"content":    map[string]any{"type": "text", "analyzer": "article_text"},
+				"category":   map[string]any{"type": "keyword"},
+				"tags":       map[string]any{"type": "keyword"},
+			},
+		},
+	}
+	body, _ := json.Marshal(mapping)
+	res, err = r.es.Indices.Create(ArticleIndex, r.es.Indices.Create.WithContext(ctx), r.es.Indices.Create.WithBody(bytes.NewReader(body)))
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.IsError() {
+		data, _ := io.ReadAll(res.Body)
+		return &Error{Message: string(data)}
+	}
+	return nil
 }
 
 func (r *ElasticsearchRepository) IndexArticle(ctx context.Context, doc domain.Document) error {
@@ -105,10 +153,10 @@ func mustQueries(query domain.Query) []map[string]any {
 func filterQueries(query domain.Query) []map[string]any {
 	filter := make([]map[string]any, 0, 2)
 	if query.Tag != "" {
-		filter = append(filter, map[string]any{"term": map[string]any{"tags.keyword": query.Tag}})
+		filter = append(filter, map[string]any{"term": map[string]any{"tags": query.Tag}})
 	}
 	if query.Category != "" {
-		filter = append(filter, map[string]any{"term": map[string]any{"category.keyword": query.Category}})
+		filter = append(filter, map[string]any{"term": map[string]any{"category": query.Category}})
 	}
 	return filter
 }

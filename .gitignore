@@ -9,6 +9,8 @@
 *.test
 bin/
 dist/
+.gocache/
+.gomodcache/
 
 .DS_Store
 Thumbs.db

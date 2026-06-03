@@ -8,12 +8,12 @@ import (
 
 	fiberws "github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-	chatrepo "github.com/newfeed/community-news/services/chat-service/internal/room/repository"
+	"github.com/newfeed/community-news/services/chat-service/internal/room/domain"
 	"github.com/redis/go-redis/v9"
 )
 
 type Repository interface {
-	SaveMessage(ctx context.Context, roomID, userID, body string) (chatrepo.Message, error)
+	SaveMessage(ctx context.Context, roomID, userID, body string) (domain.Message, error)
 }
 
 type Hub struct {

@@ -14,6 +14,13 @@ message UpsertProfileRequest {
   string user_id = 1;
   string display_name = 2;
   string bio = 3;
+  string headline = 4;
+  string education = 5;
+  string occupation = 6;
+  string location = 7;
+  string website_url = 8;
+  string avatar_object_id = 9;
+  string cover_object_id = 10;
 }
 
 message UpsertProfileResponse {}
