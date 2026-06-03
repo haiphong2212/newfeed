@@ -32,6 +32,13 @@ func main() {
 	}
 	defer grpcServer.GracefulStop()
 	app := platform.NewFiber(cfg.ServiceName)
+	app.Get("/v1/users/:id/profile", func(c *fiber.Ctx) error {
+		profile, err := profiles.GetProfile(c.UserContext(), c.Params("id"))
+		if err != nil {
+			return err
+		}
+		return c.JSON(profile)
+	})
 	app.Put("/v1/users/:id/profile", func(c *fiber.Ctx) error {
 		var profile domain.Profile
 		if err := c.BodyParser(&profile); err != nil {
@@ -39,6 +46,30 @@ func main() {
 		}
 		profile.UserID = c.Params("id")
 		if err := profiles.UpsertProfile(c.UserContext(), profile); err != nil {
+			return err
+		}
+		return c.SendStatus(fiber.StatusNoContent)
+	})
+	app.Patch("/v1/users/:id/profile/avatar", func(c *fiber.Ctx) error {
+		var input struct {
+			ObjectID string `json:"object_id"`
+		}
+		if err := c.BodyParser(&input); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, "invalid json body")
+		}
+		if err := profiles.UpdateAvatar(c.UserContext(), c.Params("id"), input.ObjectID); err != nil {
+			return err
+		}
+		return c.SendStatus(fiber.StatusNoContent)
+	})
+	app.Patch("/v1/users/:id/profile/cover", func(c *fiber.Ctx) error {
+		var input struct {
+			ObjectID string `json:"object_id"`
+		}
+		if err := c.BodyParser(&input); err != nil {
+			return fiber.NewError(fiber.StatusBadRequest, "invalid json body")
+		}
+		if err := profiles.UpdateCover(c.UserContext(), c.Params("id"), input.ObjectID); err != nil {
 			return err
 		}
 		return c.SendStatus(fiber.StatusNoContent)

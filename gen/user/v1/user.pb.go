@@ -22,12 +22,19 @@ const (
 )
 
 type UpsertProfileRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
-	Bio           string                 `protobuf:"bytes,3,opt,name=bio,proto3" json:"bio,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	UserId         string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	DisplayName    string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Bio            string                 `protobuf:"bytes,3,opt,name=bio,proto3" json:"bio,omitempty"`
+	Headline       string                 `protobuf:"bytes,4,opt,name=headline,proto3" json:"headline,omitempty"`
+	Education      string                 `protobuf:"bytes,5,opt,name=education,proto3" json:"education,omitempty"`
+	Occupation     string                 `protobuf:"bytes,6,opt,name=occupation,proto3" json:"occupation,omitempty"`
+	Location       string                 `protobuf:"bytes,7,opt,name=location,proto3" json:"location,omitempty"`
+	WebsiteUrl     string                 `protobuf:"bytes,8,opt,name=website_url,json=websiteUrl,proto3" json:"website_url,omitempty"`
+	AvatarObjectId string                 `protobuf:"bytes,9,opt,name=avatar_object_id,json=avatarObjectId,proto3" json:"avatar_object_id,omitempty"`
+	CoverObjectId  string                 `protobuf:"bytes,10,opt,name=cover_object_id,json=coverObjectId,proto3" json:"cover_object_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *UpsertProfileRequest) Reset() {
@@ -77,6 +84,55 @@ func (x *UpsertProfileRequest) GetDisplayName() string {
 func (x *UpsertProfileRequest) GetBio() string {
 	if x != nil {
 		return x.Bio
+	}
+	return ""
+}
+
+func (x *UpsertProfileRequest) GetHeadline() string {
+	if x != nil {
+		return x.Headline
+	}
+	return ""
+}
+
+func (x *UpsertProfileRequest) GetEducation() string {
+	if x != nil {
+		return x.Education
+	}
+	return ""
+}
+
+func (x *UpsertProfileRequest) GetOccupation() string {
+	if x != nil {
+		return x.Occupation
+	}
+	return ""
+}
+
+func (x *UpsertProfileRequest) GetLocation() string {
+	if x != nil {
+		return x.Location
+	}
+	return ""
+}
+
+func (x *UpsertProfileRequest) GetWebsiteUrl() string {
+	if x != nil {
+		return x.WebsiteUrl
+	}
+	return ""
+}
+
+func (x *UpsertProfileRequest) GetAvatarObjectId() string {
+	if x != nil {
+		return x.AvatarObjectId
+	}
+	return ""
+}
+
+func (x *UpsertProfileRequest) GetCoverObjectId() string {
+	if x != nil {
+		return x.CoverObjectId
 	}
 	return ""
 }
@@ -297,11 +353,22 @@ var File_user_v1_user_proto protoreflect.FileDescriptor
 
 const file_user_v1_user_proto_rawDesc = "" +
 	"\n" +
-	"\x12user/v1/user.proto\x12\auser.v1\"d\n" +
+	"\x12user/v1/user.proto\x12\auser.v1\"\xcd\x02\n" +
 	"\x14UpsertProfileRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12!\n" +
 	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12\x10\n" +
-	"\x03bio\x18\x03 \x01(\tR\x03bio\"\x17\n" +
+	"\x03bio\x18\x03 \x01(\tR\x03bio\x12\x1a\n" +
+	"\bheadline\x18\x04 \x01(\tR\bheadline\x12\x1c\n" +
+	"\teducation\x18\x05 \x01(\tR\teducation\x12\x1e\n" +
+	"\n" +
+	"occupation\x18\x06 \x01(\tR\n" +
+	"occupation\x12\x1a\n" +
+	"\blocation\x18\a \x01(\tR\blocation\x12\x1f\n" +
+	"\vwebsite_url\x18\b \x01(\tR\n" +
+	"websiteUrl\x12(\n" +
+	"\x10avatar_object_id\x18\t \x01(\tR\x0eavatarObjectId\x12&\n" +
+	"\x0fcover_object_id\x18\n" +
+	" \x01(\tR\rcoverObjectId\"\x17\n" +
 	"\x15UpsertProfileResponse\"U\n" +
 	"\x11FollowUserRequest\x12\x1f\n" +
 	"\vfollower_id\x18\x01 \x01(\tR\n" +

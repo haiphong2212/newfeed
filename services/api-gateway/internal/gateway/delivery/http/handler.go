@@ -1,6 +1,12 @@
 package http
 
 import (
+	"bytes"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+
 	"github.com/gofiber/fiber/v2"
 	authv1 "github.com/newfeed/community-news/gen/auth/v1"
 	newsv1 "github.com/newfeed/community-news/gen/news/v1"
@@ -12,10 +18,19 @@ import (
 type Handler struct {
 	health gatewaygrpc.HealthClient
 	grpc   *gatewaygrpc.Clients
+	http   HTTPTargets
+	client *http.Client
 }
 
-func NewHandler(health gatewaygrpc.HealthClient, clients *gatewaygrpc.Clients) Handler {
-	return Handler{health: health, grpc: clients}
+type HTTPTargets struct {
+	User   string
+	News   string
+	Search string
+	Media  string
+}
+
+func NewHandler(health gatewaygrpc.HealthClient, clients *gatewaygrpc.Clients, targets HTTPTargets) Handler {
+	return Handler{health: health, grpc: clients, http: targets, client: http.DefaultClient}
 }
 
 func (h Handler) RegisterRoutes(app *fiber.App) {
@@ -35,10 +50,67 @@ func (h Handler) RegisterRoutes(app *fiber.App) {
 	app.Get("/v1/auth/validate", h.validate)
 	app.Post("/v1/articles/publish", h.publishArticle)
 	app.Put("/v1/users/:id/profile", h.upsertProfile)
+	app.Get("/v1/users/:id/profile", h.forward(h.http.User))
+	app.Patch("/v1/users/:id/profile/avatar", h.forward(h.http.User))
+	app.Patch("/v1/users/:id/profile/cover", h.forward(h.http.User))
 	app.Post("/v1/users/:id/following/:target_id", h.followUser)
 	app.Post("/v1/users/:id/topics/:topic", h.followTopic)
+	app.Get("/v1/users/:user_id/articles", h.forward(h.http.News))
+	app.Post("/v1/articles/:article_id/comments", h.forward(h.http.News))
+	app.Get("/v1/articles/:article_id/comments", h.forward(h.http.News))
+	app.Post("/v1/articles/:article_id/share", h.forward(h.http.News))
+	app.Get("/v1/users/:user_id/shares", h.forward(h.http.News))
 	app.Get("/v1/search/articles", h.searchArticles)
 	app.Post("/v1/search/articles", h.indexArticle)
+	app.Post("/v1/media/upload", h.forward(h.http.Media))
+	app.Get("/objects/:bucket/*", h.forward(h.http.Media))
+}
+
+func (h Handler) forward(target string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		base, err := url.Parse(target)
+		if err != nil || base.Scheme == "" || base.Host == "" {
+			return fiber.NewError(fiber.StatusBadGateway, "invalid upstream target")
+		}
+		upstream := *base
+		upstream.Path = strings.TrimRight(base.Path, "/") + c.Path()
+		upstream.RawQuery = string(c.Request().URI().QueryString())
+		req, err := http.NewRequestWithContext(c.UserContext(), c.Method(), upstream.String(), bytes.NewReader(c.Body()))
+		if err != nil {
+			return err
+		}
+		c.Request().Header.VisitAll(func(key, value []byte) {
+			name := string(key)
+			if strings.EqualFold(name, "host") {
+				return
+			}
+			req.Header.Add(name, string(value))
+		})
+		req.Header.Set("X-Forwarded-Host", c.Hostname())
+		req.Header.Set("X-Forwarded-Proto", c.Protocol())
+		req.Header.Set("X-Real-IP", c.IP())
+		if prior := req.Header.Get("X-Forwarded-For"); prior != "" {
+			req.Header.Set("X-Forwarded-For", prior+", "+c.IP())
+		} else {
+			req.Header.Set("X-Forwarded-For", c.IP())
+		}
+
+		res, err := h.client.Do(req)
+		if err != nil {
+			return fiber.NewError(fiber.StatusBadGateway, err.Error())
+		}
+		defer res.Body.Close()
+		for name, values := range res.Header {
+			for _, value := range values {
+				c.Append(name, value)
+			}
+		}
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+		return c.Status(res.StatusCode).Send(body)
+	}
 }
 
 func (h Handler) register(c *fiber.Ctx) error {

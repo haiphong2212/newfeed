@@ -2,5 +2,7 @@ CREATE TABLE IF NOT EXISTS discussion_rooms (
     id UUID PRIMARY KEY,
     article_id UUID NOT NULL UNIQUE REFERENCES articles(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
+    locked BOOLEAN NOT NULL DEFAULT FALSE,
+    archived_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

@@ -26,7 +26,11 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	service := usecase.NewService(repository.NewElasticsearchRepository(es))
+	searchRepo := repository.NewElasticsearchRepository(es)
+	if err := searchRepo.EnsureArticleIndex(context.Background()); err != nil {
+		log.Fatal(err)
+	}
+	service := usecase.NewService(searchRepo)
 	grpcServer, err := platform.StartGRPC(cfg.GRPCAddr, cfg.ServiceName, logger, func(server *grpc.Server) {
 		searchv1.RegisterSearchServiceServer(server, searchgrpc.NewServer(service))
 	})

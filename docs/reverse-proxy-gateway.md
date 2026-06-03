@@ -4,7 +4,7 @@ The gateway is a standard-library Go reverse proxy that can replace Nginx in fro
 
 ## Routing
 
-- `app.newfeed.site` -> `APP_TARGET`
+- `web.newfeed.site` -> `APP_TARGET`
 - `admin.newfeed.site` -> `ADMIN_TARGET`
 - `api.newfeed.site` -> `API_TARGET`
 
