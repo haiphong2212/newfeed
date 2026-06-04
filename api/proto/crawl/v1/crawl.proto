@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package crawl.v1;
+
+option go_package = "github.com/newfeed/community-news/gen/crawl/v1;crawlv1";
+
+service CrawlService {
+  rpc SearchCandidates(SearchCandidatesRequest) returns (SearchCandidatesResponse);
+  rpc ApproveCandidate(ApproveCandidateRequest) returns (ApproveCandidateResponse);
+}
+
+message SearchCandidatesRequest {
+  string query = 1;
+  string requested_by = 2;
+  int32 limit = 3;
+}
+
+message SearchCandidatesResponse {
+  string session_id = 1;
+  repeated Candidate candidates = 2;
+}
+
+message ApproveCandidateRequest {
+  string candidate_id = 1;
+  string approved_by = 2;
+}
+
+message ApproveCandidateResponse {
+  string post_id = 1;
+  string status = 2;
+}
+
+message Candidate {
+  string id = 1;
+  string title = 2;
+  string short_content = 3;
+  string source_name = 4;
+  string source_url = 5;
+  string image_url = 6;
+  string published_at = 7;
+  repeated string tags = 8;
+}

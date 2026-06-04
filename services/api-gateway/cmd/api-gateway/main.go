@@ -26,6 +26,7 @@ func main() {
 		"search-service":       env.String("SEARCH_SERVICE_URL", "search-service:50056"),
 		"media-service":        env.String("MEDIA_SERVICE_URL", "media-service:50057"),
 		"analytics-service":    env.String("ANALYTICS_SERVICE_URL", "analytics-service:50058"),
+		"crawl-service":        env.String("CRAWL_SERVICE_URL", "crawl-service:50059"),
 	}
 	clients, err := gatewaygrpc.NewClients(targets)
 	if err != nil {
@@ -37,6 +38,7 @@ func main() {
 		News:   env.String("NEWS_HTTP_URL", "http://news-service:8003"),
 		Search: env.String("SEARCH_HTTP_URL", "http://search-service:8004"),
 		Media:  env.String("MEDIA_HTTP_URL", "http://media-service:8008"),
+		Crawl:  env.String("CRAWL_HTTP_URL", "http://crawl-service:8010"),
 	}
 	handler := gatewayhttp.NewHandler(gatewaygrpc.NewHealthClient(targets), clients, httpTargets)
 	app := platform.NewFiber(cfg.ServiceName)
