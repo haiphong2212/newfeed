@@ -59,3 +59,18 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/newfeed:gateway-latest
             ${{ secrets.DOCKERHUB_USERNAME }}/newfeed:gateway-${{ github.sha }}
+
+      - name: Build and Push Crawl Service
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: services/crawl-service/Dockerfile
+          platforms: linux/amd64
+          pull: true
+          no-cache: true
+          provenance: false
+          sbom: false
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/newfeed:crawl-latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/newfeed:crawl-${{ github.sha }}
