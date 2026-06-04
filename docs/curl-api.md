@@ -147,3 +147,44 @@ Search articles:
 curl -X GET "$API_URL/v1/search/articles?q=openai&tag=openai&category=ai&limit=20" \
   -H "Authorization: Bearer $ACCESS_TOKEN"
 ```
+
+## Admin Crawl
+
+Create or update a crawl source:
+
+```bash
+curl -X POST "$API_URL/v1/admin/crawl/sources" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "VnExpress Technology",
+    "base_url": "https://vnexpress.net",
+    "rss_url": "https://vnexpress.net/rss/so-hoa.rss",
+    "source_type": "rss",
+    "category": "technology",
+    "enabled": true
+  }'
+```
+
+Search crawl candidates for admin review:
+
+```bash
+curl -X POST "$API_URL/v1/admin/crawl/search" \
+  -H "Authorization: Bearer $ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"openai gpt", "limit":5}'
+```
+
+Approve one generated candidate:
+
+```bash
+curl -X POST "$API_URL/v1/admin/crawl/candidates/replace_candidate_id/approve" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```
+
+List approved crawl posts:
+
+```bash
+curl -X GET "$API_URL/v1/admin/crawl/posts?limit=20" \
+  -H "Authorization: Bearer $ACCESS_TOKEN"
+```

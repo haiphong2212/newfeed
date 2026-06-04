@@ -27,6 +27,7 @@ type HTTPTargets struct {
 	News   string
 	Search string
 	Media  string
+	Crawl  string
 }
 
 func NewHandler(health gatewaygrpc.HealthClient, clients *gatewaygrpc.Clients, targets HTTPTargets) Handler {
@@ -73,6 +74,10 @@ func (h Handler) RegisterRoutes(app *fiber.App) {
 	app.Post("/v1/search/articles", h.indexArticle)
 	app.Post("/v1/media/upload", h.forward(h.http.Media))
 	app.Get("/objects/:bucket/*", h.forward(h.http.Media))
+	app.Get("/v1/admin/crawl/*", h.forward(h.http.Crawl))
+	app.Post("/v1/admin/crawl/*", h.forward(h.http.Crawl))
+	app.Patch("/v1/admin/crawl/*", h.forward(h.http.Crawl))
+	app.Delete("/v1/admin/crawl/*", h.forward(h.http.Crawl))
 }
 
 func (h Handler) forward(target string) fiber.Handler {
