@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package search.v1;
+
+option go_package = "github.com/newfeed/community-news/gen/search/v1;searchv1";
+
+service SearchService {
+  rpc IndexArticle(IndexArticleRequest) returns (IndexArticleResponse);
+  rpc SearchArticles(SearchArticlesRequest) returns (SearchArticlesResponse);
+}
+
+message IndexArticleRequest {
+  string article_id = 1;
+  string title = 2;
+  string content = 3;
+  string category = 4;
+  repeated string tags = 5;
+}
+
+message IndexArticleResponse {}
+
+message SearchArticlesRequest {
+  string query = 1;
+  string title = 2;
+  string tag = 3;
+  string category = 4;
+  int32 limit = 5;
+}
+
+message SearchArticleResult {
+  string article_id = 1;
+  string title = 2;
+  string snippet = 3;
+  double score = 4;
+}
+
+message SearchArticlesResponse {
+  repeated SearchArticleResult results = 1;
+}

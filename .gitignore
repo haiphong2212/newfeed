@@ -1,0 +1,16 @@
+.env
+.env.*
+!.env.example
+
+/data/
+/storage/
+
+*.log
+*.test
+bin/
+dist/
+.gocache/
+.gomodcache/
+
+.DS_Store
+Thumbs.db

@@ -1,0 +1,10 @@
+FROM golang:1.24-alpine AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+COPY services/api-gateway ./services/api-gateway
+RUN go build -o /out/gateway ./services/api-gateway/cmd/reverse-proxy
+
+FROM alpine:3.20
+COPY --from=build /out/gateway /usr/local/bin/newfeed-gateway
+EXPOSE 80 443
+ENTRYPOINT ["newfeed-gateway"]

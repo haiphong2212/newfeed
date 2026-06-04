@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info:
+  title: Newfeed Community News API
+  version: 0.1.0
+paths:
+  /healthz:
+    get:
+      responses:
+        "200":
+          description: Service health.
+  /v1/auth/register:
+    post:
+      summary: Register a new user.
+      responses:
+        "201":
+          description: User created.
+  /v1/auth/login:
+    post:
+      summary: Login and receive JWT access and refresh tokens.
+      responses:
+        "200":
+          description: Token pair.
+  /v1/articles/publish:
+    post:
+      summary: Publish an article and emit ArticlePublished.
+      responses:
+        "202":
+          description: Article publish accepted.
